@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kanna · Prueba lector QR</title>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<style>
+*{box-sizing:border-box}body{font-family:Arial,sans-serif;background:#111;color:white;text-align:center;margin:0;padding:28px 15px}
+main{max-width:430px;margin:auto;background:#222;padding:24px;border-radius:16px}
+h1{letter-spacing:3px}button{border:0;background:white;color:#111;font-size:17px;font-weight:bold;padding:14px;border-radius:8px;width:100%;margin-top:12px}
+#reader{margin-top:15px;overflow:hidden;border-radius:8px}#result{overflow-wrap:anywhere;background:#333;padding:12px;border-radius:8px;min-height:48px}
+small{color:#aaa}#stop{display:none}
+</style>
+</head>
+<body>
+<main>
+<h1>KANNA</h1><p>Prueba del lector QR en iPhone</p>
+<button id="start">Abrir cámara</button>
+<button id="stop">Cerrar cámara</button>
+<div id="reader"></div>
+<p id="status" role="status">Pulsa «Abrir cámara» y permite el acceso.</p>
+<p><strong>Resultado:</strong></p>
+<div id="result">Aún no se ha leído ningún código.</div>
+<small>Prueba independiente: no consulta ni modifica reservaciones.</small>
+</main>
+<script>
+const APP_URL='https://script.google.com/macros/s/AKfycbxYUyjWciY6wrHvUdp3d0AexzY6cco2kTFHZFXwoTQ-OpN_1zsLefeJaAoays5GPGpKZA/exec';
+let scanner=null, busy=false;
+const start=document.getElementById('start'),stop=document.getElementById('stop');
+const status=document.getElementById('status'),result=document.getElementById('result');
+async function closeCamera(){
+ if(scanner){try{await scanner.stop()}catch(e){} try{scanner.clear()}catch(e){} scanner=null}
+ stop.style.display='none';start.style.display='block';
+}
+start.onclick=async()=>{
+ if(busy)return;busy=true;start.disabled=true;
+ status.textContent='Solicitando permiso para usar la cámara...';
+ if(typeof Html5Qrcode==='undefined'){
+  status.textContent='No se cargó la librería. Comprueba tu conexión a Internet.';
+  start.disabled=false;busy=false;return;
+ }
+ try{
+  scanner=new Html5Qrcode('reader');
+  await scanner.start({facingMode:'environment'}, {fps:10,qrbox:{width:220,height:220}},
+   async decoded=>{
+    result.textContent=decoded;status.textContent='QR leído. Abriendo reservación...';
+    await closeCamera();
+    window.location.assign(APP_URL+'?q='+encodeURIComponent(decoded));
+   },()=>{});
+  start.style.display='none';stop.style.display='block';
+  status.textContent='Cámara abierta. Apunta a un QR.';
+ }catch(e){
+  status.textContent='No se pudo abrir la cámara: '+(e?.message||String(e));
+  await closeCamera();
+ }
+ start.disabled=false;busy=false;
+};
+stop.onclick=async()=>{await closeCamera();status.textContent='Cámara cerrada.'};
+</script>
+</body>
+</html>
