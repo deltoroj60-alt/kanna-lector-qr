@@ -25,6 +25,7 @@ small{color:#aaa}#stop{display:none}
 <small>Prueba independiente: no consulta ni modifica reservaciones.</small>
 </main>
 <script>
+const APP_URL='https://script.google.com/macros/s/AKfycbxYUyjWciY6wrHvUdp3d0AexzY6cco2kTFHZFXwoTQ-OpN_1zsLefeJaAoays5GPGpKZA/exec';
 let scanner=null, busy=false;
 const start=document.getElementById('start'),stop=document.getElementById('stop');
 const status=document.getElementById('status'),result=document.getElementById('result');
@@ -43,8 +44,9 @@ start.onclick=async()=>{
   scanner=new Html5Qrcode('reader');
   await scanner.start({facingMode:'environment'}, {fps:10,qrbox:{width:220,height:220}},
    async decoded=>{
-    result.textContent=decoded;status.textContent='¡QR leído correctamente!';
+    result.textContent=decoded;status.textContent='QR leído. Abriendo reservación...';
     await closeCamera();
+    window.location.assign(APP_URL+'?q='+encodeURIComponent(decoded));
    },()=>{});
   start.style.display='none';stop.style.display='block';
   status.textContent='Cámara abierta. Apunta a un QR.';
